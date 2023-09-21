@@ -472,6 +472,9 @@ contract Router is IRouter, ILighterV2TransferCallback {
                     currentByte += parsed;
 
                     (value, parsed) = _parseSizePaddedNumberFromCallData(currentByte, dataLength);
+                    if(value > 0xFFFFFFFF) {
+                        revert PeripheryErrors.LighterV2ParseCallData_InvalidPaddedNumber();
+                    }
                     hintId = uint32(value);
                     currentByte += parsed;
 
@@ -493,11 +496,13 @@ contract Router is IRouter, ILighterV2TransferCallback {
                     isAsk >>= 1;
                 }
             }
-
             // Update limit order
-            if (_func == 2) {
+            else if (_func == 2) {
                 while (currentByte < dataLength) {
                     (value, parsed) = _parseSizePaddedNumberFromCallData(currentByte, dataLength);
+                    if(value > 0xFFFFFFFF) {
+                        revert PeripheryErrors.LighterV2ParseCallData_InvalidPaddedNumber();
+                    }
                     orderId = uint32(value);
                     currentByte += parsed;
 
@@ -510,6 +515,9 @@ contract Router is IRouter, ILighterV2TransferCallback {
                     currentByte += parsed;
 
                     (value, parsed) = _parseSizePaddedNumberFromCallData(currentByte, dataLength);
+                    if(value > 0xFFFFFFFF) {
+                        revert PeripheryErrors.LighterV2ParseCallData_InvalidPaddedNumber();
+                    }
                     hintId = uint32(value);
                     currentByte += parsed;
 
@@ -520,11 +528,13 @@ contract Router is IRouter, ILighterV2TransferCallback {
                     updateLimitOrder(orderBookId, orderId, amount0Base, priceBase, hintId);
                 }
             }
-
             // Cancel limit order
-            if (_func == 3) {
+            else if (_func == 3) {
                 while (currentByte < dataLength) {
                     (value, parsed) = _parseSizePaddedNumberFromCallData(currentByte, dataLength);
+                    if(value > 0xFFFFFFFF) {
+                        revert PeripheryErrors.LighterV2ParseCallData_InvalidPaddedNumber();
+                    }
                     orderId = uint32(value);
                     currentByte += parsed;
 
@@ -535,9 +545,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
                     orderBook.cancelLimitOrder(orderId, msg.sender);
                 }
             }
-
             // Create IoC order
-            if (_func == 4 || _func == 5) {
+            else if (_func == 4 || _func == 5) {
                 bool isAskByte = (_func == 5);
 
                 (value, parsed) = _parseSizePaddedNumberFromCallData(currentByte, dataLength);
@@ -556,9 +565,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
 
                 return;
             }
-
             // Create FoK order
-            if (_func == 6 || _func == 7) {
+            else if (_func == 6 || _func == 7) {
                 bool isAskByte = (_func == 7);
 
                 (value, parsed) = _parseSizePaddedNumberFromCallData(currentByte, dataLength);
@@ -578,9 +586,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
                 return;
             }
         }
-
         /// swapExactInputSingle with mantissa representation
-        if (_func >= 8 && _func < 8 + 4) {
+        else if (_func >= 8 && _func < 8 + 4) {
             // Parse compressed isAsk & orderBookId
             (bool isAsk, uint8 orderBookId) = _parseCompressedOBFromCallData(1, dataLength);
             currentByte = 2;
@@ -604,9 +611,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
             swapExactInputSingle(orderBookId, isAsk, exactInput, minOutput, recipient, unwrap);
             return;
         }
-
         /// swapExactOutputSingle with mantissa representation
-        if (_func >= 12 && _func < 12 + 4) {
+        else if (_func >= 12 && _func < 12 + 4) {
             // Parse compressed isAsk & orderBookId
             (bool isAsk, uint8 orderBookId) = _parseCompressedOBFromCallData(1, dataLength);
             currentByte = 2;
@@ -630,9 +636,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
             swapExactOutputSingle(orderBookId, isAsk, exactOutput, maxInput, recipient, unwrap);
             return;
         }
-
         /// swapExactInputMulti with mantissa representation
-        if (_func >= 16 && _func < 16 + 4) {
+        else if (_func >= 16 && _func < 16 + 4) {
             currentByte = 1;
 
             MultiPathExactInputRequest memory request;
@@ -669,9 +674,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
             swapExactInputMulti(request);
             return;
         }
-
         /// swapExactOutputMulti with mantissa representation
-        if (_func >= 20 && _func < 20 + 4) {
+        else if (_func >= 20 && _func < 20 + 4) {
             currentByte = 1;
 
             MultiPathExactOutputRequest memory request;
@@ -707,6 +711,10 @@ contract Router is IRouter, ILighterV2TransferCallback {
 
             swapExactOutputMulti(request);
             return;
+        } 
+        /// Invalid function selector
+        else {
+            revert PeripheryErrors.LighterV2ParseCallData_InvalidFunctionSelector();
         }
     }
 
@@ -785,8 +793,12 @@ contract Router is IRouter, ILighterV2TransferCallback {
     /// Does not care about the swap results since Router contract should not store any funds
     /// before or after transactions
     function _handleNativeRefund() internal {
-        if (address(this).balance > 0) {
-            payable(msg.sender).transfer(address(this).balance);
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            (bool success, ) = payable(msg.sender).call{value: balance}("");
+            if(!success) {
+                revert PeripheryErrors.LighterV2Router_NativeRefundFailed();
+            }
         }
     }
 

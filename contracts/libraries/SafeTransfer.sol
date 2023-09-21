@@ -6,7 +6,6 @@ import "@elliottech/lighter-v2-core/contracts/interfaces/external/IERC20Minimal.
 import "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title SafeTransferLib
-/// @author OpenZeppelin (https://github.com/transmissions11/solmate/blob/main/src/utils/SafeTransferLib.sol)
 /// @notice Modified safe transfer library for Lighter V2 Periphery
 library SafeTransferLib {
     using Address for address;

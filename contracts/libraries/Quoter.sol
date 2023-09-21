@@ -160,6 +160,9 @@ library QuoterLib {
         bool isExactInput
     ) internal view returns (uint256, uint256) {
         IOrderBook orderBook = IOrderBook(factory.getOrderBookFromId(orderBookId));
+        if (address(orderBook) == address(0)) {
+            revert PeripheryErrors.LighterV2Quoter_InvalidOrderBookId();
+        }
 
         LocalVars memory localVars;
         localVars.amount = amount;
