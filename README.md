@@ -10,7 +10,7 @@ They are an abstraction layer that enhance the security and the extensibility of
 ## Router
 
 The Router contract simplifies user interactions with order books. 
-It presents a straightforward interface for creating, updating, and cancelling both single and batch orders. 
+It presents a straightforward interface for creating, updating, and canceling both single and batch orders. 
 The contract accommodates both "Immediate or Cancel" and "Fill or Kill" order types, as well as basic swaps. 
 Additionally, it enhances order book capabilities with multi-path swaps, 
 allowing for a sequence of swaps over multiple order books in a single transaction.
@@ -76,7 +76,7 @@ selective unwrapping during swaps when the output token is WETH.
 ### Wrap
 
 - Native token get automatically wrapped to offer smooth interoperability 
-- Any Excess native sent by taker will be refunded at end of transaction
+- Any excess native sent by taker will be refunded at end of transaction
 
 ### Unwrap
 
