@@ -42,7 +42,12 @@ contract Router is IRouter, ILighterV2TransferCallback {
     }
 
     receive() external payable {
-        revert PeripheryErrors.LighterV2Router_ReceiveNotSupported();
+        // Given that the router facilitates unwrapping tokens for users during swapExact operations,
+        // the receive method must be accessible when invoked by the WETH token.
+        // This is necessary because the router triggers the `withdraw` method, which subsequently calls this method.
+        if (msg.sender != address(weth9)) {
+            revert PeripheryErrors.LighterV2Router_ReceiveNotSupported();
+        }
     }
 
     /// @inheritdoc IRouter
@@ -393,7 +398,8 @@ contract Router is IRouter, ILighterV2TransferCallback {
 
         if (address(debitToken) == address(weth9) && address(this).balance >= debitTokenAmount) {
             // Pay with WETH9
-            IWETH9(weth9).depositTo{value: debitTokenAmount}(msg.sender);
+            IWETH9(weth9).deposit{value: debitTokenAmount}();
+            debitToken.safeTransfer(msg.sender, debitTokenAmount);
         } else if (payer == address(this)) {
             // Pay with tokens already in the contract (for the exact input multi path case)
             debitToken.safeTransfer(msg.sender, debitTokenAmount);
@@ -711,7 +717,7 @@ contract Router is IRouter, ILighterV2TransferCallback {
 
             swapExactOutputMulti(request);
             return;
-        } 
+        }
         /// Invalid function selector
         else {
             revert PeripheryErrors.LighterV2ParseCallData_InvalidFunctionSelector();
@@ -811,7 +817,11 @@ contract Router is IRouter, ILighterV2TransferCallback {
             revert PeripheryErrors.LighterV2Router_InsufficientWETH9();
         }
         if (amount > 0) {
-            weth9.withdrawTo(recipient, amount);
+            weth9.withdraw(amount);
+            (bool success, ) = payable(recipient).call{value: amount}("");
+            if (!success) {
+                revert PeripheryErrors.LighterV2Router_UnwrapFailed();
+            }
         }
     }
 

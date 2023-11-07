@@ -29,6 +29,9 @@ library PeripheryErrors {
     /// @notice Thrown when native token refund fails
     error LighterV2Router_NativeRefundFailed();
 
+    /// @notice Thrown when unwrapping of native token fails
+    error LighterV2Router_UnwrapFailed();
+
     /*//////////////////////////////////////////////////////////////////////////
                                       LIGHTER-V2-PARSE-CALLDATA
     //////////////////////////////////////////////////////////////////////////*/
